@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Math: Determinan Matriks Interaktif</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & Manga/Comic Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        manga: {
+                            yellow: '#FFDE59',
+                            pink: '#FF66C4',
+                            blue: '#5CE1E6',
+                            dark: '#1A1A1A',
+                            paper: '#F8F5EC',
+                            accent: '#FF3131'
+                        }
+                    },
+                    fontFamily: {
+                        comic: ['"Comic Neue"', 'cursive'],
+                        action: ['"Bangers"', 'cursive'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Manga Aesthetics */
+        body {
+            background-color: #121214;
+            background-image: radial-gradient(#26262b 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        
+        .manga-border {
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0px #000;
+        }
+        
+        .manga-border-sm {
+            border: 3px solid #000;
+            box-shadow: 3px 3px 0px #000;
+        }
+        
+        .manga-btn {
+            transition: all 0.1s ease;
+        }
+        .manga-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px #000;
+        }
+        .manga-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #000;
+        }
+        
+        /* Halftone Dot Pattern */
+        .halftone {
+            background-image: radial-gradient(#000 20%, transparent 20%);
+            background-size: 8px 8px;
+            opacity: 0.1;
+        }
+        
+        /* Speech Bubble Tail */
+        .speech-bubble {
+            position: relative;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 30px;
+            border-width: 15px 15px 0;
+            border-style: solid;
+            border-color: #fff transparent;
+            display: block;
+            width: 0;
+        }
+        .speech-bubble-dark::after {
+            border-color: #000 transparent;
+            bottom: -19px;
+            left: 28px;
+            border-width: 17px 17px 0;
+        }
+
+        /* Speed lines visual effect */
+        .speed-lines {
+            background: repeating-radial-gradient(
+                circle at center,
+                transparent 0,
+                transparent 50px,
+                rgba(0, 0, 0, 0.05) 50px,
+                rgba(0, 0, 0, 0.05) 55px
+            );
+        }
+
+        /* Matrix Inputs Styling */
+        .matrix-input {
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.25rem;
+            border: 2px solid #000;
+            border-radius: 0.375rem;
+            padding: 0.25rem;
+            background: #fff;
+        }
+        .matrix-input:focus {
+            outline: none;
+            background: #FEF08A;
+            border-color: #000;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFDE59;
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<body class="text-slate-900 font-sans min-h-screen flex flex-col justify-between selection:bg-manga-pink selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-manga-yellow border-b-4 border-black p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-black text-manga-yellow p-2 rounded-lg font-action text-2xl rotate-3 border-2 border-black">
+                    DET-MANGA!
+                </div>
+                <div>
+                    <h1 class="font-action text-2xl md:text-3xl tracking-wide uppercase leading-none">Petualangan Determinan Matriks</h1>
+                    <p class="font-comic text-xs md:text-sm text-slate-800 font-bold">Kuasai Matriks 2x2 & 3x3 Aturan Sarrus!</p>
+                </div>
+            </div>
+
+            <!-- Audio & Stats Control -->
+            <div class="flex items-center gap-3">
+                <div class="bg-white border-2 border-black px-3 py-1 rounded-full flex items-center gap-2 font-bold text-sm">
+                    <i class="fa-solid fa-trophy text-yellow-500"></i>
+                    <span>XP: <span id="user-xp" class="text-manga-pink">0</span></span>
+                </div>
+                <button id="btn-sound" onclick="toggleAudio()" class="bg-white hover:bg-slate-100 border-2 border-black p-2 rounded-full font-bold shadow-[2px_2px_0px_#000] active:translate-y-0.5" title="Mute/Unmute Audio">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-lg w-6 h-6 flex items-center justify-center"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-black py-2 px-4 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-center gap-2 md:gap-4 flex-wrap">
+            <button onclick="switchTab('comic')" id="tab-comic" class="tab-btn active bg-manga-yellow text-black font-action px-4 py-1.5 rounded-lg border-2 border-black text-lg hover:brightness-105 transition">
+                <i class="fa-solid fa-book-open mr-1"></i> 1. Komik Edukasi
+            </button>
+            <button onclick="switchTab('sarrus')" id="tab-sarrus" class="tab-btn bg-white text-black font-action px-4 py-1.5 rounded-lg border-2 border-black text-lg hover:brightness-105 transition">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 2. Visualizer Sarrus 3x3
+            </button>
+            <button onclick="switchTab('sandbox')" id="tab-sandbox" class="tab-btn bg-white text-black font-action px-4 py-1.5 rounded-lg border-2 border-black text-lg hover:brightness-105 transition">
+                <i class="fa-solid fa-calculator mr-1"></i> 3. Kalkulator Sandbox
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn bg-white text-black font-action px-4 py-1.5 rounded-lg border-2 border-black text-lg hover:brightness-105 transition">
+                <i class="fa-solid fa-gamepad mr-1"></i> 4. Kuis Diagnostik
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-5xl mx-auto p-4 md:p-6 flex-grow w-full">
+
+        <!-- ================= SECTION 1: KOMIK EDUKASI ================= -->
+        <section id="sec-comic" class="tab-content block space-y-6">
+            <div class="bg-manga-paper manga-border p-4 md:p-6 rounded-xl relative overflow-hidden">
+                <div class="absolute inset-0 halftone pointer-events-none"></div>
+
+                <!-- Comic Header -->
+                <div class="flex justify-between items-center border-b-4 border-black pb-3 mb-6">
+                    <span class="font-action text-xl bg-manga-pink text-white px-3 py-1 rounded-md border-2 border-black transform -rotate-2">
+                        CHAPTER 1: RAHASIA DETERMINAN
+                    </span>
+                    <span class="font-comic font-bold text-sm text-slate-600">Halaman <span id="comic-page-num">1</span> dari 4</span>
+                </div>
+
+                <!-- Manga Panels Container -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    
+                    <!-- Avatar Sensei / Character Visual -->
+                    <div class="md:col-span-4 flex flex-col items-center justify-center">
+                        <div class="relative w-48 h-48 md:w-56 md:h-56 bg-manga-blue manga-border rounded-full flex items-center justify-center overflow-hidden bg-cover bg-center" id="character-box">
+                            <!-- Dynamic SVG Avatar -->
+                            <svg id="character-avatar" viewBox="0 0 200 200" class="w-full h-full">
+                                <!-- Background Aura -->
+                                <circle cx="100" cy="100" r="90" fill="#5CE1E6" />
+                                <!-- Hair Back -->
+                                <path d="M 40,110 Q 20,60 100,20 Q 180,60 160,110 Z" fill="#1A1A1A"/>
+                                <!-- Face -->
+                                <circle cx="100" cy="105" r="50" fill="#FFDFC4"/>
+                                <!-- Eyes -->
+                                <ellipse cx="80" cy="100" rx="8" ry="12" fill="#1A1A1A"/>
+                                <ellipse cx="120" cy="100" rx="8" ry="12" fill="#1A1A1A"/>
+                                <circle cx="82" cy="97" r="3" fill="#FFF"/>
+                                <circle cx="122" cy="97" r="3" fill="#FFF"/>
+                                <!-- Glasses -->
+                                <rect x="65" y="90" width="30" height="20" rx="3" fill="none" stroke="#000" stroke-width="3"/>
+                                <rect x="105" y="90" width="30" height="20" rx="3" fill="none" stroke="#000" stroke-width="3"/>
+                                <line x1="95" y1="100" x2="105" y2="100" stroke="#000" stroke-width="3"/>
+                                <!-- Smile / Expression -->
+                                <path id="avatar-mouth" d="M 85,125 Q 100,140 115,125" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                                <!-- Hair Front Spikes -->
+                                <path d="M 50,75 L 70,95 L 85,70 L 100,100 L 115,70 L 130,95 L 150,75 L 130,50 L 70,50 Z" fill="#1A1A1A"/>
+                                <!-- Sensei Headband -->
+                                <rect x="55" y="55" width="90" height="15" fill="#FF3131" rx="2" transform="rotate(-3 100 62)"/>
+                                <text x="100" y="66" font-family="Bangers" font-size="10" fill="#FFF" text-anchor="middle" transform="rotate(-3 100 62)">MATH SENSEI</text>
+                            </svg>
+                        </div>
+                        <div class="mt-2 font-action text-lg bg-black text-white px-3 py-0.5 rounded-full border-2 border-black">
+                            BELLA
+                        </div>
+                    </div>
+
+                    <!-- Speech Bubble & Content Area -->
+                    <div class="md:col-span-8 flex flex-col justify-between min-h-[300px]">
+                        <div class="bg-white manga-border p-5 rounded-2xl relative speech-bubble shadow-lg mb-6">
+                            <h3 id="comic-title" class="font-action text-2xl text-manga-accent mb-2">PENGANTAR DETERMINAN MATRIKS</h3>
+                            <p id="comic-text" class="font-comic text-lg leading-relaxed text-slate-800">
+                                "Hallo! Selamat datang di Dojo Matriks! Determinan adalah sebuah nilai spesial yang dihitung dari matriks persegi. Nilai ini memberikan petunjuk besar tentang sifat-sifat matriks tersebut!"
+                            </p>
+
+                            <!-- Dynamic Visual Example inside Bubble -->
+                            <div id="comic-interactive-demo" class="mt-4 p-3 bg-yellow-50 rounded-lg border-2 border-dashed border-black">
+                                <!-- Interactive graphic inserted via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Panel Navigation Controls -->
+                        <div class="flex justify-between items-center gap-4">
+                            <button id="btn-comic-prev" onclick="prevComicPage()" class="manga-btn bg-slate-200 hover:bg-slate-300 text-black font-action px-5 py-2 rounded-lg border-2 border-black text-lg disabled:opacity-50">
+                                <i class="fa-solid fa-arrow-left mr-2"></i> Kembali
+                            </button>
+                            <div class="flex gap-2" id="comic-dots">
+                                <!-- Page indicator dots dynamically added -->
+                            </div>
+                            <button id="btn-comic-next" onclick="nextComicPage()" class="manga-btn bg-manga-yellow hover:bg-yellow-400 text-black font-action px-6 py-2 rounded-lg border-2 border-black text-lg">
+                                Lanjut <i class="fa-solid fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 2: VISUALIZER ATURAN SARRUS 3x3 ================= -->
+        <section id="sec-sarrus" class="tab-content hidden space-y-6">
+            <div class="bg-manga-paper manga-border p-4 md:p-6 rounded-xl relative">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-4 border-black pb-4 mb-6">
+                    <div>
+                        <h2 class="font-action text-3xl text-black">VISUALIZER ATURAN SARRUS 3x3</h2>
+                        <p class="font-comic text-slate-700 font-bold">Tekan tombol langkah untuk melihat bagaimana garis diagonal dikalikan & dijumlahkan!</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="randomizeSarrus()" class="manga-btn bg-manga-blue text-black font-action px-3 py-1.5 rounded-lg border-2 border-black text-sm">
+                            <i class="fa-solid fa-shuffle mr-1"></i> Acak Matriks
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Matrix Input Grid & Expansion Visualizer -->
+                    <div class="lg:col-span-7 flex flex-col items-center justify-center bg-white manga-border p-4 rounded-xl">
+                        <p class="font-action text-lg mb-2 text-slate-700">Matriks 3x3 + 2 Kolom Bantuan Sarrus</p>
+                        
+                        <!-- Visual Sarrus Canvas Container -->
+                        <div class="relative overflow-x-auto w-full flex justify-center p-2">
+                            <div id="sarrus-matrix-grid" class="grid grid-cols-5 gap-2 text-center font-bold text-lg min-w-[320px] max-w-[450px]">
+                                <!-- Matrix 3x3 + 2 columns added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="flex gap-4 mt-4 text-xs font-bold">
+                            <div class="flex items-center gap-1">
+                                <span class="w-4 h-4 bg-emerald-400 border border-black inline-block rounded"></span>
+                                <span>Diagonal Utama (+)</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-4 h-4 bg-rose-400 border border-black inline-block rounded"></span>
+                                <span>Diagonal Samping (-)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step-by-step Sarrus Explanation Panel -->
+                    <div class="lg:col-span-5 flex flex-col justify-between bg-white manga-border p-5 rounded-xl">
+                        <div>
+                            <div class="bg-black text-manga-yellow px-3 py-1 font-action text-xl rounded-md inline-block mb-3">
+                                STEP <span id="sarrus-step-num">1</span> dari 4
+                            </div>
+                            <h3 id="sarrus-step-title" class="font-action text-xl text-black mb-2">Salin 2 Kolom Pertama</h3>
+                            <p id="sarrus-step-desc" class="font-comic text-base text-slate-800 leading-relaxed min-h-[80px]">
+                                Tuliskan kembali Kolom 1 dan Kolom 2 di sebelah kanan matriks awal. Ini memberi tempat untuk menarik 3 garis diagonal kanan dan 3 diagonal kiri.
+                            </p>
+                            
+                            <!-- Calculation Display Box -->
+                            <div id="sarrus-calc-box" class="mt-4 p-3 bg-slate-100 rounded-lg border-2 border-black font-mono text-sm overflow-x-auto min-h-[60px] flex items-center justify-center font-bold text-slate-800">
+                                det(A) = ...
+                            </div>
+                        </div>
+
+                        <!-- Visualizer Step Controls -->
+                        <div class="flex justify-between items-center gap-2 mt-6">
+                            <button id="btn-sarrus-prev" onclick="stepSarrus(-1)" class="manga-btn bg-slate-200 text-black font-action px-4 py-2 rounded-lg border-2 border-black text-base disabled:opacity-50">
+                                <i class="fa-solid fa-chevron-left mr-1"></i> Mundur
+                            </button>
+                            <button id="btn-sarrus-reset" onclick="resetSarrus()" class="manga-btn bg-slate-100 text-black font-action px-3 py-2 rounded-lg border-2 border-black text-base" title="Reset">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                            <button id="btn-sarrus-next" onclick="stepSarrus(1)" class="manga-btn bg-manga-yellow text-black font-action px-5 py-2 rounded-lg border-2 border-black text-base">
+                                Lanjut <i class="fa-solid fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 3: KALKULATOR SANDBOX ================= -->
+        <section id="sec-sandbox" class="tab-content hidden space-y-6">
+            <div class="bg-manga-paper manga-border p-4 md:p-6 rounded-xl">
+                <div class="border-b-4 border-black pb-4 mb-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                        <h2 class="font-action text-3xl text-black">KALKULATOR SANDBOX INTERAKTIF</h2>
+                        <p class="font-comic text-slate-700 font-bold">Masukkan nilai sesukamu dan pelajari jalan penyelesaiannya secara instan!</p>
+                    </div>
+
+                    <!-- Dimension Selector Toggle -->
+                    <div class="inline-flex bg-black p-1 rounded-xl border-2 border-black">
+                        <button id="btn-dim-2" onclick="setSandboxDimension(2)" class="font-action px-4 py-1.5 rounded-lg text-lg bg-manga-yellow text-black transition">
+                            Matriks 2x2
+                        </button>
+                        <button id="btn-dim-3" onclick="setSandboxDimension(3)" class="font-action px-4 py-1.5 rounded-lg text-lg text-white hover:text-manga-yellow transition">
+                            Matriks 3x3
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Input Section -->
+                    <div class="lg:col-span-5 bg-white manga-border p-5 rounded-xl flex flex-col items-center justify-between">
+                        <div class="w-full">
+                            <h3 class="font-action text-xl mb-4 text-center">INPUT ELEMENT MATRIKS</h3>
+                            
+                            <!-- Matrix 2x2 Input Layout -->
+                            <div id="sandbox-grid-2" class="grid grid-cols-2 gap-4 max-w-[240px] mx-auto p-4 bg-manga-yellow/20 rounded-xl border-2 border-black">
+                                <input type="number" id="m2-00" value="4" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m2-01" value="2" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m2-10" value="1" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m2-11" value="5" class="matrix-input" oninput="calculateSandbox()">
+                            </div>
+
+                            <!-- Matrix 3x3 Input Layout (Hidden initially) -->
+                            <div id="sandbox-grid-3" class="hidden grid grid-cols-3 gap-3 max-w-[300px] mx-auto p-4 bg-manga-pink/20 rounded-xl border-2 border-black">
+                                <input type="number" id="m3-00" value="1" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-01" value="2" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-02" value="3" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-10" value="0" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-11" value="1" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-12" value="4" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-20" value="5" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-21" value="6" class="matrix-input" oninput="calculateSandbox()">
+                                <input type="number" id="m3-22" value="0" class="matrix-input" oninput="calculateSandbox()">
+                            </div>
+                        </div>
+
+                        <div class="w-full flex gap-3 mt-6">
+                            <button onclick="randomizeSandbox()" class="flex-1 manga-btn bg-manga-blue text-black font-action py-2 rounded-lg border-2 border-black text-lg">
+                                <i class="fa-solid fa-dice mr-1"></i> Nilai Acak
+                            </button>
+                            <button onclick="clearSandbox()" class="manga-btn bg-rose-200 text-black font-action px-4 py-2 rounded-lg border-2 border-black text-lg">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step-by-Step Result Section -->
+                    <div class="lg:col-span-7 bg-white manga-border p-5 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-action text-xl text-black">LANGKAH PERHITUNGAN DETAILED</h3>
+                                <div class="bg-black text-manga-yellow font-action px-3 py-1 rounded-lg text-lg">
+                                    det(A) = <span id="sandbox-result-val">18</span>
+                                </div>
+                            </div>
+
+                            <!-- Output Detailed Steps -->
+                            <div id="sandbox-steps-container" class="space-y-4 font-comic text-base">
+                                <!-- Step details will be injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Tip Box -->
+                        <div class="mt-4 p-3 bg-sky-50 rounded-lg border-2 border-sky-300 flex items-start gap-3 text-xs font-bold text-sky-900">
+                            <i class="fa-solid fa-lightbulb text-yellow-500 text-base mt-0.5"></i>
+                            <span>Tips Manga Math: Jika determinan matriks adalah **0 (Nol)**, maka matriks tersebut dinamakan **Matriks Singular** dan tidak memiliki matriks invers!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= SECTION 4: KUIS DIAGNOSTIK ================= -->
+        <section id="sec-quiz" class="tab-content hidden space-y-6">
+            <div class="bg-manga-paper manga-border p-4 md:p-6 rounded-xl relative">
+                
+                <!-- Quiz Screen: Start -->
+                <div id="quiz-screen-start" class="text-center py-8 space-y-4">
+                    <div class="inline-block bg-manga-pink text-white font-action text-3xl px-6 py-2 rounded-2xl border-4 border-black rotate-1">
+                        UJIAN TANTANGAN SARRUS & DETERMINAN!
+                    </div>
+                    <p class="font-comic text-lg max-w-xl mx-auto text-slate-800 font-bold">
+                        Buktikan kemampuan matematikamu! Selesaikan 5 soal tantangan determinan matriks 2x2 dan 3x3 untuk mendapatkan XP dan gelar Master Matriks!
+                    </p>
+                    <div class="pt-4">
+                        <button onclick="startQuiz()" class="manga-btn bg-manga-yellow text-black font-action text-2xl px-8 py-3 rounded-xl border-4 border-black shadow-lg">
+                            <i class="fa-solid fa-play mr-2"></i> MULAI UJIAN!
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Screen: Active Question -->
+                <div id="quiz-screen-question" class="hidden space-y-6">
+                    <div class="flex justify-between items-center border-b-4 border-black pb-3">
+                        <div class="font-action text-xl bg-black text-white px-3 py-1 rounded-md">
+                            SOAL <span id="quiz-current-num">1</span> DI <span id="quiz-total-num">5</span>
+                        </div>
+                        <div class="font-comic font-bold text-sm bg-manga-yellow border-2 border-black px-3 py-1 rounded-full">
+                            Skor Saat Ini: <span id="quiz-score">0</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                        <!-- Left: Matrix display for question -->
+                        <div class="md:col-span-5 bg-white manga-border p-6 rounded-xl flex flex-col items-center justify-center">
+                            <p class="font-comic font-bold text-sm text-slate-500 mb-2" id="quiz-matrix-title">Hitung Determinan Matriks Berikut:</p>
+                            <div id="quiz-matrix-display" class="font-mono text-xl font-bold p-4 bg-yellow-50 rounded-lg border-2 border-black flex items-center justify-center">
+                                <!-- Matrix rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Question & Multiple Choice Options -->
+                        <div class="md:col-span-7 space-y-4">
+                            <div class="bg-white manga-border p-4 rounded-xl">
+                                <p id="quiz-question-text" class="font-comic text-lg font-bold text-slate-800">
+                                    Berapakah nilai determinan dari matriks A di samping?
+                                </p>
+                            </div>
+
+                            <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <!-- Option buttons rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback Box -->
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl manga-border font-comic text-base font-bold text-center">
+                        <!-- Feedback text -->
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button id="btn-quiz-next" onclick="nextQuestion()" class="hidden manga-btn bg-manga-yellow text-black font-action px-6 py-2 rounded-lg border-2 border-black text-lg">
+                            Soal Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Screen: Result -->
+                <div id="quiz-screen-result" class="hidden text-center py-8 space-y-6">
+                    <h2 class="font-action text-4xl text-black">HASIL UJIAN DETERMINAN!</h2>
+                    
+                    <div class="w-32 h-32 mx-auto bg-manga-yellow manga-border rounded-full flex items-center justify-center font-action text-5xl">
+                        <span id="quiz-final-score">80</span>%
+                    </div>
+
+                    <div class="max-w-md mx-auto bg-white manga-border p-4 rounded-xl font-comic">
+                        <p id="quiz-result-title" class="font-action text-2xl text-manga-pink mb-1">LUAR BIASA!</p>
+                        <p id="quiz-result-desc" class="text-slate-700 font-bold">Kamu telah menguasai konsep dasar determinan 2x2 dan aturan Sarrus 3x3 dengan sangat baik!</p>
+                    </div>
+
+                    <div>
+                        <button onclick="startQuiz()" class="manga-btn bg-manga-blue text-black font-action text-xl px-6 py-2.5 rounded-xl border-2 border-black">
+                            <i class="fa-solid fa-rotate-right mr-2"></i> Coba Lagi
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black text-white py-4 border-t-4 border-black mt-8 text-center font-comic text-xs">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p>© 2026 Media Pembelajaran Matematika Manga - Determinan Matriks</p>
+            <p class="text-manga-yellow font-bold">Dibuat dengan Web Audio API & Interactive Sarrus Engine</p>
+        </div>
+    </footer>
+
+    <!-- JS LOGIC CODE -->
+    <script>
+        /* ==========================================================================
+           1. WEB AUDIO API SYNTHESIZER (No external sound files required)
+           ========================================================================== */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high text-lg w-6 h-6 flex items-center justify-center';
+                playSound('click');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-lg w-6 h-6 flex items-center justify-center text-rose-500';
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.setValueAtTime(180, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'swoosh') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        }
+
+        /* ==========================================================================
+           2. NAVIGATION & TABS SYSTEM
+           ========================================================================== */
+        let currentTab = 'comic';
+        let userXP = 0;
+
+        function switchTab(tabId) {
+            playSound('click');
+            currentTab = tabId;
+            
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active', 'bg-manga-yellow');
+                el.classList.add('bg-white');
+            });
+
+            // Show selected content
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('active', 'bg-manga-yellow');
+            activeBtn.classList.remove('bg-white');
+
+            // Trigger tab specific setup
+            if (tabId === 'sandbox') calculateSandbox();
+            if (tabId === 'sarrus') renderSarrusStep();
+        }
+
+        function addXP(points) {
+            userXP += points;
+            document.getElementById('user-xp').innerText = userXP;
+        }
+
+
+        /* ==========================================================================
+           3. COMIC STORYLINE DATA & LOGIC
+           ========================================================================== */
+        const comicPages = [
+            {
+                title: "PENGANTAR DETERMINAN MATRIKS",
+                text: "Konnichiwa! Selamat datang di Dojo Matriks! Determinan adalah sebuah nilai skalar unik yang dihitung dari matriks persegi. Notasinya ditulis sebagai det(A) atau |A|.",
+                mouth: "M 85,125 Q 100,140 115,125", // Smile
+                demo: `
+                    <div class="text-center font-comic">
+                        <p class="font-bold text-slate-700 mb-2">Simbol Determinan Matriks A:</p>
+                        <div class="inline-flex items-center gap-4 text-2xl font-bold font-mono">
+                            <span>A = <span class="text-manga-pink">[</span> ... <span class="text-manga-pink">]</span></span>
+                            <i class="fa-solid fa-arrow-right text-base text-slate-400"></i>
+                            <span class="bg-yellow-200 px-3 py-1 rounded border-2 border-black">det(A) = |A|</span>
+                        </div>
+                    </div>`
+            },
+            {
+                title: "DETERMINAN MATRIKS 2x2",
+                text: "Untuk matriks 2x2, rumusnya sangat mudah! Cukup kalikan diagonal utama (a × d) lalu kurangi dengan hasil kali diagonal samping (b × c).",
+                mouth: "M 85,120 Q 100,135 115,120",
+                demo: `
+                    <div class="flex flex-col items-center font-mono">
+                        <div class="text-lg font-bold mb-2">
+                            | A | = <span class="inline-block border-l-2 border-r-2 border-black px-3 py-1">
+                                <span class="text-emerald-600">a</span> &nbsp; <span class="text-rose-600">b</span><br>
+                                <span class="text-rose-600">c</span> &nbsp; <span class="text-emerald-600">d</span>
+                            </span>
+                        </div>
+                        <div class="bg-white border-2 border-black p-2 rounded text-base font-bold">
+                            det(A) = (<span class="text-emerald-600">a × d</span>) - (<span class="text-rose-600">b × c</span>)
+                        </div>
+                    </div>`
+            },
+            {
+                title: "ATURAN SARRUS UNTUK MATRIKS 3x3",
+                text: "Untuk matriks 3x3, kita menggunakan Aturan Sarrus! Triknya adalah menyalin 2 kolom pertama ke sebelah kanan matriks, lalu membuat 3 diagonal positif (+) dan 3 diagonal negatif (-).",
+                mouth: "M 85,125 Q 100,145 115,125", // Big Smile
+                demo: `
+                    <div class="text-center font-comic">
+                        <div class="inline-block text-left bg-white p-2 rounded border-2 border-black font-mono text-xs md:text-sm">
+                            <span class="text-emerald-600 font-bold">+ (a·e·i + b·f·g + c·d·h)</span><br>
+                            <span class="text-rose-600 font-bold">- (c·e·g + a·f·h + b·d·i)</span>
+                        </div>
+                        <p class="text-xs font-bold mt-2 text-slate-600">Metode ini khusus & paling cepat untuk Ordo 3x3!</p>
+                    </div>`
+            },
+            {
+                title: "SIFAT PENTING & INVERS",
+                text: "Ingat jurus rahasia ini: Jika det(A) = 0, matriks dinamakan SINGULAR (tidak punya invers). Jika det(A) ≠ 0, matriks dinamakan NON-SINGULAR!",
+                mouth: "M 85,130 Q 100,115 115,130", // Surprised/Determined
+                demo: `
+                    <div class="grid grid-cols-2 gap-2 text-center text-xs font-bold font-comic">
+                        <div class="p-2 bg-rose-100 border-2 border-black rounded">
+                            <p class="text-rose-700 font-action text-sm">det(A) = 0</p>
+                            <p>Matriks Singular<br>(Invers TIDAK Ada)</p>
+                        </div>
+                        <div class="p-2 bg-emerald-100 border-2 border-black rounded">
+                            <p class="text-emerald-700 font-action text-sm">det(A) ≠ 0</p>
+                            <p>Matriks Non-Singular<br>(Punya Invers)</p>
+                        </div>
+                    </div>`
+            }
+        ];
+
+        let comicPageIndex = 0;
+
+        function renderComicPage() {
+            const page = comicPages[comicPageIndex];
+            document.getElementById('comic-page-num').innerText = comicPageIndex + 1;
+            document.getElementById('comic-title').innerText = page.title;
+            document.getElementById('comic-text').innerText = `"${page.text}"`;
+            document.getElementById('comic-interactive-demo').innerHTML = page.demo;
+            document.getElementById('avatar-mouth').setAttribute('d', page.mouth);
+
+            // Update dots
+            const dotsContainer = document.getElementById('comic-dots');
+            dotsContainer.innerHTML = '';
+            comicPages.forEach((_, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `w-3 h-3 rounded-full border border-black ${idx === comicPageIndex ? 'bg-manga-pink scale-125' : 'bg-slate-300'}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            // Buttons state
+            document.getElementById('btn-comic-prev').disabled = comicPageIndex === 0;
+            if (comicPageIndex === comicPages.length - 1) {
+                document.getElementById('btn-comic-next').innerHTML = `Coba Visualizer <i class="fa-solid fa-wand-magic-sparkles ml-1"></i>`;
+            } else {
+                document.getElementById('btn-comic-next').innerHTML = `Lanjut <i class="fa-solid fa-arrow-right ml-1"></i>`;
+            }
+        }
+
+        function nextComicPage() {
+            if (comicPageIndex < comicPages.length - 1) {
+                comicPageIndex++;
+                playSound('swoosh');
+                renderComicPage();
+            } else {
+                switchTab('sarrus');
+            }
+        }
+
+        function prevComicPage() {
+            if (comicPageIndex > 0) {
+                comicPageIndex--;
+                playSound('swoosh');
+                renderComicPage();
+            }
+        }
+
+
+        /* ==========================================================================
+           4. VISUALIZER ATURAN SARRUS 3x3 LOGIC
+           ========================================================================== */
+        let sarrusMatrix = [
+            [1, 2, 3],
+            [0, 1, 4],
+            [5, 6, 0]
+        ];
+        let sarrusStep = 0;
+
+        function randomizeSarrus() {
+            playSound('click');
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    sarrusMatrix[r][c] = Math.floor(Math.random() * 7) - 2; // values -2 to 4
+                }
+            }
+            sarrusStep = 0;
+            renderSarrusStep();
+        }
+
+        function resetSarrus() {
+            playSound('click');
+            sarrusStep = 0;
+            renderSarrusStep();
+        }
+
+        function stepSarrus(direction) {
+            playSound('swoosh');
+            sarrusStep = Math.max(0, Math.min(3, sarrusStep + direction));
+            renderSarrusStep();
+        }
+
+        function renderSarrusStep() {
+            const grid = document.getElementById('sarrus-matrix-grid');
+            grid.innerHTML = '';
+
+            const m = sarrusMatrix;
+            // Calculations
+            const p1 = m[0][0] * m[1][1] * m[2][2];
+            const p2 = m[0][1] * m[1][2] * m[2][0];
+            const p3 = m[0][2] * m[1][0] * m[2][1];
+            const sumPos = p1 + p2 + p3;
+
+            const n1 = m[0][2] * m[1][1] * m[2][0];
+            const n2 = m[0][0] * m[1][2] * m[2][1];
+            const n3 = m[0][1] * m[1][0] * m[2][2];
+            const sumNeg = n1 + n2 + n3;
+
+            const detVal = sumPos - sumNeg;
+
+            // Define highlighting based on step
+            // Step 0: Base Matrix 3x3
+            // Step 1: Expanded 2 columns
+            // Step 2: Positive Diagonals
+            // Step 3: Negative Diagonals & Result
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 5; c++) {
+                    let val = 0;
+                    let isExpandedCol = c >= 3;
+                    if (c < 3) val = m[r][c];
+                    else val = m[r][c - 3];
+
+                    const cell = document.createElement('div');
+                    cell.className = `p-3 rounded-lg border-2 border-black flex items-center justify-center transition-all duration-300 font-mono`;
+
+                    // Default styling
+                    if (isExpandedCol) {
+                        cell.classList.add('bg-slate-100', 'text-slate-400', 'border-dashed');
+                        if (sarrusStep >= 1) {
+                            cell.classList.remove('opacity-30', 'border-dashed');
+                            cell.classList.add('bg-yellow-100', 'text-slate-900', 'border-black');
+                        } else {
+                            cell.classList.add('opacity-30');
+                        }
+                    } else {
+                        cell.classList.add('bg-white', 'text-slate-900');
+                    }
+
+                    // Highlight Diagonals in Step 2 (+)
+                    if (sarrusStep === 2) {
+                        // Diag 1: (0,0),(1,1),(2,2)
+                        // Diag 2: (0,1),(1,2),(2,3)
+                        // Diag 3: (0,2),(1,3),(2,4)
+                        if ((r===0&&c===0)||(r===1&&c===1)||(r===2&&c===2) ||
+                            (r===0&&c===1)||(r===1&&c===2)||(r===2&&c===3) ||
+                            (r===0&&c===2)||(r===1&&c===3)||(r===2&&c===4)) {
+                            cell.classList.add('bg-emerald-300', 'scale-105', 'font-black');
+                        }
+                    }
+
+                    // Highlight Diagonals in Step 3 (-)
+                    if (sarrusStep === 3) {
+                        // Neg Diags:
+                        // (0,2),(1,1),(2,0)
+                        // (0,3),(1,2),(2,1)
+                        // (0,4),(1,3),(2,2)
+                        if ((r===0&&c===2)||(r===1&&c===1)||(r===2&&c===0) ||
+                            (r===0&&c===3)||(r===1&&c===2)||(r===2&&c===1) ||
+                            (r===0&&c===4)||(r===1&&c===3)||(r===2&&c===2)) {
+                            cell.classList.add('bg-rose-300', 'scale-105', 'font-black');
+                        }
+                    }
+
+                    cell.innerText = val;
+                    grid.appendChild(cell);
+                }
+            }
+
+            // Text and Step Description Updates
+            const stepNumEl = document.getElementById('sarrus-step-num');
+            const stepTitleEl = document.getElementById('sarrus-step-title');
+            const stepDescEl = document.getElementById('sarrus-step-desc');
+            const calcBox = document.getElementById('sarrus-calc-box');
+
+            stepNumEl.innerText = sarrusStep + 1;
+
+            if (sarrusStep === 0) {
+                stepTitleEl.innerText = "Matriks Asli 3x3";
+                stepDescEl.innerText = "Ini adalah matriks ordo 3x3 awal yang akan kita cari determinannya.";
+                calcBox.innerText = `det(A) = ?`;
+            } else if (sarrusStep === 1) {
+                stepTitleEl.innerText = "Ekspansi Kolom Bantuan";
+                stepDescEl.innerText = "Salin Kolom 1 dan Kolom 2 tepat di sebelah kanan matriks. Ini memungkinkan kita menarik 3 diagonal penuh ke kanan dan ke kiri!";
+                calcBox.innerText = `Kolom 1 & 2 disalin ke kanan.`;
+            } else if (sarrusStep === 2) {
+                stepTitleEl.innerText = "Perkalian Diagonal Utama (+)";
+                stepDescEl.innerText = `Kalikan elemen pada 3 garis diagonal kanan (hijau), lalu JUMLAHKAN hasil ketiganya:\n(${m[0][0]}×${m[1][1]}×${m[2][2]}) + (${m[0][1]}×${m[1][2]}×${m[2][0]}) + (${m[0][2]}×${m[1][0]}×${m[2][1]})`;
+                calcBox.innerText = `Jumlah (+) = (${p1}) + (${p2}) + (${p3}) = ${sumPos}`;
+            } else if (sarrusStep === 3) {
+                stepTitleEl.innerText = "Perkalian Diagonal Samping (-)";
+                stepDescEl.innerText = `Kalikan 3 garis diagonal kiri (merah), lalu KURANGI dari total diagonal utama!\nKurangi: (${m[0][2]}×${m[1][1]}×${m[2][0]}) + (${m[0][0]}×${m[1][2]}×${m[2][1]}) + (${m[0][1]}×${m[1][0]}×${m[2][2]})`;
+                calcBox.innerText = `det(A) = (${sumPos}) - (${sumNeg}) = ${detVal}`;
+            }
+
+            // Disable buttons logic
+            document.getElementById('btn-sarrus-prev').disabled = sarrusStep === 0;
+            document.getElementById('btn-sarrus-next').disabled = sarrusStep === 3;
+        }
+
+
+        /* ==========================================================================
+           5. KALKULATOR SANDBOX LOGIC
+           ========================================================================== */
+        let activeSandboxDim = 2;
+
+        function setSandboxDimension(dim) {
+            playSound('click');
+            activeSandboxDim = dim;
+            const b2 = document.getElementById('btn-dim-2');
+            const b3 = document.getElementById('btn-dim-3');
+            const g2 = document.getElementById('sandbox-grid-2');
+            const g3 = document.getElementById('sandbox-grid-3');
+
+            if (dim === 2) {
+                b2.className = "font-action px-4 py-1.5 rounded-lg text-lg bg-manga-yellow text-black transition";
+                b3.className = "font-action px-4 py-1.5 rounded-lg text-lg text-white hover:text-manga-yellow transition";
+                g2.classList.remove('hidden');
+                g3.classList.add('hidden');
+            } else {
+                b3.className = "font-action px-4 py-1.5 rounded-lg text-lg bg-manga-pink text-white transition";
+                b2.className = "font-action px-4 py-1.5 rounded-lg text-lg text-white hover:text-manga-yellow transition";
+                g3.classList.remove('hidden');
+                g2.classList.add('hidden');
+            }
+            calculateSandbox();
+        }
+
+        function clearSandbox() {
+            playSound('click');
+            if (activeSandboxDim === 2) {
+                ['00','01','10','11'].forEach(id => document.getElementById(`m2-${id}`).value = 0);
+            } else {
+                ['00','01','02','10','11','12','20','21','22'].forEach(id => document.getElementById(`m3-${id}`).value = 0);
+            }
+            calculateSandbox();
+        }
+
+        function randomizeSandbox() {
+            playSound('click');
+            if (activeSandboxDim === 2) {
+                ['00','01','10','11'].forEach(id => {
+                    document.getElementById(`m2-${id}`).value = Math.floor(Math.random() * 10) - 3;
+                });
+            } else {
+                ['00','01','02','10','11','12','20','21','22'].forEach(id => {
+                    document.getElementById(`m3-${id}`).value = Math.floor(Math.random() * 8) - 2;
+                });
+            }
+            calculateSandbox();
+        }
+
+        function calculateSandbox() {
+            const stepsContainer = document.getElementById('sandbox-steps-container');
+            const resultValEl = document.getElementById('sandbox-result-val');
+
+            if (activeSandboxDim === 2) {
+                const a = parseFloat(document.getElementById('m2-00').value) || 0;
+                const b = parseFloat(document.getElementById('m2-01').value) || 0;
+                const c = parseFloat(document.getElementById('m2-10').value) || 0;
+                const d = parseFloat(document.getElementById('m2-11').value) || 0;
+
+                const mainDiag = a * d;
+                const antiDiag = b * c;
+                const det = mainDiag - antiDiag;
+
+                resultValEl.innerText = det;
+
+                stepsContainer.innerHTML = `
+                    <div class="p-3 bg-yellow-50 rounded-lg border-2 border-black">
+                        <p class="font-bold text-slate-700">Langkah 1: Identifikasi Elemen</p>
+                        <p class="font-mono text-sm">a = ${a}, b = ${b}, c = ${c}, d = ${d}</p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 rounded-lg border-2 border-black">
+                        <p class="font-bold text-emerald-800">Langkah 2: Perkalian Diagonal Utama (a × d)</p>
+                        <p class="font-mono text-sm">${a} × ${d} = <strong>${mainDiag}</strong></p>
+                    </div>
+                    <div class="p-3 bg-rose-50 rounded-lg border-2 border-black">
+                        <p class="font-bold text-rose-800">Langkah 3: Perkalian Diagonal Samping (b × c)</p>
+                        <p class="font-mono text-sm">${b} × ${c} = <strong>${antiDiag}</strong></p>
+                    </div>
+                    <div class="p-3 bg-manga-yellow/30 rounded-lg border-2 border-black">
+                        <p class="font-bold text-slate-900">Langkah 4: Pengurangan Hasil</p>
+                        <p class="font-mono text-base font-bold">det(A) = ${mainDiag} - (${antiDiag}) = ${det}</p>
+                    </div>
+                `;
+            } else {
+                // 3x3 Sarrus sandbox
+                const m00 = parseFloat(document.getElementById('m3-00').value) || 0;
+                const m01 = parseFloat(document.getElementById('m3-01').value) || 0;
+                const m02 = parseFloat(document.getElementById('m3-02').value) || 0;
+                const m10 = parseFloat(document.getElementById('m3-10').value) || 0;
+                const m11 = parseFloat(document.getElementById('m3-11').value) || 0;
+                const m12 = parseFloat(document.getElementById('m3-12').value) || 0;
+                const m20 = parseFloat(document.getElementById('m3-20').value) || 0;
+                const m21 = parseFloat(document.getElementById('m3-21').value) || 0;
+                const m22 = parseFloat(document.getElementById('m3-22').value) || 0;
+
+                const p1 = m00 * m11 * m22;
+                const p2 = m01 * m12 * m20;
+                const p3 = m02 * m10 * m21;
+                const sumP = p1 + p2 + p3;
+
+                const n1 = m02 * m11 * m20;
+                const n2 = m00 * m12 * m21;
+                const n3 = m01 * m10 * m22;
+                const sumN = n1 + n2 + n3;
+
+                const det = sumP - sumN;
+                resultValEl.innerText = det;
+
+                stepsContainer.innerHTML = `
+                    <div class="p-3 bg-emerald-50 rounded-lg border-2 border-black">
+                        <p class="font-bold text-emerald-800">1. Jumlah Diagonal Utama (+)</p>
+                        <p class="font-mono text-xs md:text-sm">(${m00}·${m11}·${m22}) + (${m01}·${m12}·${m20}) + (${m02}·${m10}·${m21})</p>
+                        <p class="font-mono text-sm font-bold">= ${p1} + ${p2} + ${p3} = ${sumP}</p>
+                    </div>
+                    <div class="p-3 bg-rose-50 rounded-lg border-2 border-black">
+                        <p class="font-bold text-rose-800">2. Jumlah Diagonal Samping (-)</p>
+                        <p class="font-mono text-xs md:text-sm">(${m02}·${m11}·${m20}) + (${m00}·${m12}·${m21}) + (${m01}·${m10}·${m22})</p>
+                        <p class="font-mono text-sm font-bold">= ${n1} + ${n2} + ${n3} = ${sumN}</p>
+                    </div>
+                    <div class="p-3 bg-manga-pink/20 rounded-lg border-2 border-black">
+                        <p class="font-bold text-slate-900">3. Hasil Akhir Aturan Sarrus</p>
+                        <p class="font-mono text-base font-bold">det(A) = ${sumP} - (${sumN}) = ${det}</p>
+                    </div>
+                `;
+            }
+        }
+
+
+        /* ==========================================================================
+           6. KUIS DIAGNOSTIK & ASSESSMENT LOGIC
+           ========================================================================== */
+        const quizData = [
+            {
+                matrix: [
+                    [3, 2],
+                    [1, 4]
+                ],
+                type: 2,
+                question: "Berapakah nilai determinan dari matriks 2x2 di samping?",
+                options: ["10", "14", "8", "6"],
+                answer: 0, // 3*4 - 2*1 = 10
+                explanation: "det = (3 × 4) - (2 × 1) = 12 - 2 = 10."
+            },
+            {
+                matrix: [
+                    [5, -2],
+                    [3, 1]
+                ],
+                type: 2,
+                question: "Hitung determinan matriks 2x2 berikut!",
+                options: ["11", "-1", "13", "1"],
+                answer: 0, // 5*1 - (-2*3) = 5 - (-6) = 11
+                explanation: "det = (5 × 1) - (-2 × 3) = 5 - (-6) = 11."
+            },
+            {
+                matrix: [
+                    [1, 0, 2],
+                    [2, 1, 0],
+                    [0, 3, 1]
+                ],
+                type: 3,
+                question: "Dengan Aturan Sarrus, berapa determinan matriks 3x3 ini?",
+                options: ["13", "7", "5", "1"],
+                answer: 0, // (1*1*1 + 0 + 2*2*3) - (0 + 0 + 0) = (1 + 0 + 12) - 0 = 13
+                explanation: "Positif = (1·1·1) + (0·0·0) + (2·2·3) = 1 + 0 + 12 = 13. Negatif = 0. det = 13."
+            },
+            {
+                matrix: [
+                    [2, 4],
+                    [1, 2]
+                ],
+                type: 2,
+                question: "Manakah pernyataan yang benar mengenai matriks ini?",
+                options: [
+                    "Determinan = 0 (Matriks Singular)",
+                    "Determinan = 8 (Punya Invers)",
+                    "Determinan = 4",
+                    "Matriks Non-Singular"
+                ],
+                answer: 0, // 2*2 - 4*1 = 0
+                explanation: "det = (2 × 2) - (4 × 1) = 4 - 4 = 0. Karena determinan nol, matriks ini Singular!"
+            },
+            {
+                matrix: [
+                    [2, 0, 0],
+                    [1, 3, 0],
+                    [5, 4, 1]
+                ],
+                type: 3,
+                question: "Berapakah determinan dari matriks segitiga atas/bawah berikut?",
+                options: ["6", "0", "10", "12"],
+                answer: 0, // 2*3*1 = 6
+                explanation: "Untuk matriks segitiga, determinannya adalah hasil kali elemen diagonal utama: 2 × 3 × 1 = 6."
+            }
+        ];
+
+        let quizIndex = 0;
+        let quizScore = 0;
+        let selectedOption = null;
+
+        function startQuiz() {
+            playSound('click');
+            quizIndex = 0;
+            quizScore = 0;
+            document.getElementById('quiz-screen-start').classList.add('hidden');
+            document.getElementById('quiz-screen-result').classList.add('hidden');
+            document.getElementById('quiz-screen-question').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = quizData[quizIndex];
+            document.getElementById('quiz-current-num').innerText = quizIndex + 1;
+            document.getElementById('quiz-total-num').innerText = quizData.length;
+            document.getElementById('quiz-score').innerText = quizScore;
+            document.getElementById('quiz-question-text').innerText = q.question;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('btn-quiz-next').classList.add('hidden');
+
+            // Render Matrix Graphic
+            const matrixBox = document.getElementById('quiz-matrix-display');
+            if (q.type === 2) {
+                matrixBox.innerHTML = `
+                    <div class="inline-block border-l-4 border-r-4 border-black px-4 py-2 font-mono text-2xl font-bold">
+                        <div>${q.matrix[0][0]} &nbsp; ${q.matrix[0][1]}</div>
+                        <div>${q.matrix[1][0]} &nbsp; ${q.matrix[1][1]}</div>
+                    </div>
+                `;
+            } else {
+                matrixBox.innerHTML = `
+                    <div class="inline-block border-l-4 border-r-4 border-black px-3 py-1 font-mono text-lg font-bold">
+                        <div>${q.matrix[0][0]} &nbsp; ${q.matrix[0][1]} &nbsp; ${q.matrix[0][2]}</div>
+                        <div>${q.matrix[1][0]} &nbsp; ${q.matrix[1][1]} &nbsp; ${q.matrix[1][2]}</div>
+                        <div>${q.matrix[2][0]} &nbsp; ${q.matrix[2][1]} &nbsp; ${q.matrix[2][2]}</div>
+                    </div>
+                `;
+            }
+
+            // Options Render
+            const optContainer = document.getElementById('quiz-options-container');
+            optContainer.innerHTML = '';
+            q.options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = `manga-btn bg-white hover:bg-yellow-100 text-left font-comic font-bold p-3 rounded-xl border-2 border-black text-base flex items-center justify-between shadow-sm`;
+                btn.onclick = () => checkAnswer(i);
+                btn.innerHTML = `<span>${String.fromCharCode(65 + i)}. ${optText}</span> <i class="fa-regular fa-circle text-slate-300"></i>`;
+                optContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(chosenIndex) {
+            const q = quizData[quizIndex];
+            const optButtons = document.getElementById('quiz-options-container').children;
+            const feedbackEl = document.getElementById('quiz-feedback');
+
+            // Disable all buttons
+            for (let b of optButtons) {
+                b.onclick = null;
+                b.classList.remove('hover:bg-yellow-100');
+            }
+
+            if (chosenIndex === q.answer) {
+                playSound('correct');
+                quizScore += 20;
+                addXP(50);
+                document.getElementById('quiz-score').innerText = quizScore;
+                optButtons[chosenIndex].className = `manga-btn bg-emerald-300 text-left font-comic font-bold p-3 rounded-xl border-2 border-black text-base flex items-center justify-between`;
+                optButtons[chosenIndex].innerHTML = `<span>${String.fromCharCode(65 + chosenIndex)}. ${q.options[chosenIndex]}</span> <i class="fa-solid fa-circle-check text-emerald-800"></i>`;
+                
+                feedbackEl.className = "p-4 rounded-xl manga-border font-comic text-base font-bold text-center bg-emerald-100 text-emerald-900 border-black";
+                feedbackEl.innerHTML = `<p class="font-action text-xl text-emerald-800 mb-1">BENAR! +50 XP</p><p>${q.explanation}</p>`;
+            } else {
+                playSound('wrong');
+                optButtons[chosenIndex].className = `manga-btn bg-rose-300 text-left font-comic font-bold p-3 rounded-xl border-2 border-black text-base flex items-center justify-between`;
+                optButtons[chosenIndex].innerHTML = `<span>${String.fromCharCode(65 + chosenIndex)}. ${q.options[chosenIndex]}</span> <i class="fa-solid fa-circle-xmark text-rose-800"></i>`;
+                
+                // Highlight correct one
+                optButtons[q.answer].className = `manga-btn bg-emerald-100 text-left font-comic font-bold p-3 rounded-xl border-2 border-black text-base flex items-center justify-between`;
+
+                feedbackEl.className = "p-4 rounded-xl manga-border font-comic text-base font-bold text-center bg-rose-100 text-rose-900 border-black";
+                feedbackEl.innerHTML = `<p class="font-action text-xl text-rose-800 mb-1">KURANG TEPAT!</p><p>${q.explanation}</p>`;
+            }
+
+            feedbackEl.classList.remove('hidden');
+            document.getElementById('btn-quiz-next').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            quizIndex++;
+            if (quizIndex < quizData.length) {
+                renderQuestion();
+            } else {
+                showQuizResult();
+            }
+        }
+
+        function showQuizResult() {
+            document.getElementById('quiz-screen-question').classList.add('hidden');
+            document.getElementById('quiz-screen-result').classList.remove('hidden');
+
+            const finalPct = Math.round((quizScore / (quizData.length * 20)) * 100);
+            document.getElementById('quiz-final-score').innerText = finalPct;
+
+            const resTitle = document.getElementById('quiz-result-title');
+            const resDesc = document.getElementById('quiz-result-desc');
+
+            if (finalPct >= 80) {
+                resTitle.innerText = "SARRUS MASTER!";
+                resDesc.innerText = "Luar biasa! Kamu telah menguasai aturan Sarrus dan determinan 2x2 dengan sempurna!";
+                playSound('correct');
+            } else if (finalPct >= 60) {
+                resTitle.innerText = "PETARUNG HEBAT!";
+                resDesc.innerText = "Baguis! Pemahamanmu sudah cukup baik, latihan sedikit lagi untuk mencapai nilai sempurna!";
+            } else {
+                resTitle.innerText = "TETAP SEMANGAT!";
+                resDesc.innerText = "Jangan menyerah! Pelajari kembali materi di Komik dan Visualizer Sarrus lalu coba lagi!";
+            }
+        }
+
+        /* ==========================================================================
+           7. INITIALIZATION ON LOAD
+           ========================================================================== */
+        window.onload = function() {
+            renderComicPage();
+            renderSarrusStep();
+            calculateSandbox();
+        };
+    </script>
+</body>
+</html>
